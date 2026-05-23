@@ -1,0 +1,8 @@
+requests>=2.31.0
+
+# Enhanced CLI UX
+questionary>=2.0.1
+rich>=13.7.0
+
+# Lightweight Web UI
+flask>=3.0.0
