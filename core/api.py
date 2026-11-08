@@ -23,6 +23,9 @@ class Client:
         self.log.debug(f"Response {r.status_code} body={r.text}")
         if not r.ok:
             e = requests.exceptions.HTTPError(response=r)
-            e.api_msg = r.json()
+            try:
+                e.api_msg = r.json()
+            except ValueError:
+                e.api_msg = {"msg": r.text}
             raise e
         return r.json()

@@ -1,37 +1,34 @@
 # Binance Futures Testnet — Trading Bot
 
-Zero-dependency-bloat Python CLI for placing orders on [testnet.binancefuture.com](https://testnet.binancefuture.com).
+Python CLI for placing orders on [testnet.binancefuture.com](https://testnet.binancefuture.com).
 
 ## Structure
 
 ```
-internbot/
-  core/
-    api.py          # signed HTTP client          [original]
-    trade.py        # order builder               [original]
-  main.py           # original argparse CLI       [original]
-  validate.py       # input guards                [original]
-  log.py            # logging setup               [original]
-  cli_menu.py       # ★ interactive menu CLI      [added]
-  ui.py             # ★ Flask web UI              [added]
-  bot.log           # written at runtime
-  requirements.txt
+core/
+  api.py          # signed HTTP client
+  trade.py        # order builder
+main.py           # argparse CLI
+validate.py       # input guards
+log.py            # logging setup (writes bot.log)
+cli_menu.py       # interactive menu CLI
+ui.py             # Flask web UI
+requirements.txt
 ```
 
-> **What changed:** Only two files added (`cli_menu.py`, `ui.py`) and `requirements.txt` updated.
-> All original files are **untouched**.
+This bot only talks to the Binance Futures **testnet** (`testnet.binancefuture.com`); it does not trade real funds.
 
 ---
 
 ## Setup
 
 ```bash
-git clone <repo>
-cd internbot
+git clone https://github.com/athish-shubhan/binance-futures-bot.git
+cd binance-futures-bot
 pip install -r requirements.txt
 ```
 
-Set credentials once (or pass inline with `--key` / `--secret`):
+Set credentials once (passing `--key` / `--secret` on the command line also works, but they then show up in your shell history and process list):
 
 ```bash
 export BINANCE_KEY=your_testnet_api_key
@@ -46,7 +43,7 @@ export BINANCE_SECRET=your_testnet_secret
 
 ## Three Ways to Run
 
-### 1 · Original CLI (argparse, unchanged)
+### 1 · Argparse CLI
 
 ```bash
 # MARKET order
@@ -55,13 +52,13 @@ python main.py --symbol BTCUSDT --side BUY --type MARKET --qty 0.001
 # LIMIT order
 python main.py --symbol BTCUSDT --side SELL --type LIMIT --qty 0.001 --price 99000
 
-# STOP_MARKET order (bonus)
+# STOP_MARKET order
 python main.py --symbol BTCUSDT --side SELL --type STOP_MARKET --qty 0.001 --stop 85000
 ```
 
 ---
 
-### 2 · ★ Interactive Menu CLI (bonus)
+### 2 · Interactive menu CLI
 
 ```bash
 python cli_menu.py
@@ -89,7 +86,7 @@ Uses `rich` for coloured output and `questionary` for menus — falls back to pl
 
 ---
 
-### 3 · ★ Web UI (bonus)
+### 3 · Web UI
 
 ```bash
 python ui.py
@@ -98,8 +95,10 @@ python ui.py
 
 Custom port / host:
 ```bash
-python ui.py --port 8080 --host 0.0.0.0
+python ui.py --port 8080
 ```
+
+The UI has no authentication and places orders with the configured API keys, so keep it bound to `127.0.0.1` (the default). Do not expose it with `--host 0.0.0.0` on a shared network.
 
 Features:
 - BUY / SELL toggle, dropdown menus, live order summary panel
@@ -110,7 +109,7 @@ Features:
 
 ---
 
-## Output (original CLI)
+## Output (argparse CLI)
 
 ```
 ────────────────────────────────────────────
@@ -134,18 +133,8 @@ All API requests, responses, and errors are written to `bot.log`.
 
 - Only USDT-M futures pairs (e.g. `BTCUSDT`, `ETHUSDT`).
 - Quantity precision must match the symbol's lot size — use `0.001` for BTC.
-- `STOP_MARKET` is the bonus third order type; no extra dependencies needed.
+- Supported order types are `MARKET`, `LIMIT` and `STOP_MARKET`.
 
-> **Note on STOP_MARKET:** The Futures Testnet `/fapi/v1/order` endpoint has
-> known limitations vs. the live API. Implementation matches the live API spec.
+> **Note on STOP_MARKET:** the testnet `/fapi/v1/order` endpoint can behave differently from the live API.
 
 ---
-
-## Notes on AI Assistance
-
-Parts of this project were vibe-coded with AI help:
-
-- **Web UI** (`ui.py`) — the frontend HTML/CSS/JS was largely AI-assisted. The Python Flask wiring, API integration, and backend logic were written manually.
-- **README** — drafted with AI assistance and edited for accuracy.
-- **Interactive CLI** - A Basic CLI was done and enhanced with AI for design
-- All core bot logic (`core/api.py`, `core/trade.py`, `validate.py`, `log.py`, `main.py`) was written without AI help.

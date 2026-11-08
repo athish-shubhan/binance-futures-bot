@@ -15,7 +15,7 @@ import json
 import requests as _req
 from flask import Flask, request, jsonify
 
-# ── local modules (unchanged) ────────────────────────────────────────────────
+# local modules
 from log import setup
 from core.api import Client
 from core.trade import place
