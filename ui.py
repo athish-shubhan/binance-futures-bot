@@ -11,7 +11,6 @@ Opens at http://127.0.0.1:5000
 import os
 import sys
 import argparse
-import json
 import requests as _req
 from flask import Flask, request, jsonify
 
@@ -635,7 +634,7 @@ def main():
     _api_key    = a.key
     _api_secret = a.secret
 
-    print(f"\n  Binance Futures Bot — Web UI")
+    print("\n  Binance Futures Bot — Web UI")
     print(f"  Open → http://{a.host}:{a.port}\n")
     app.run(host=a.host, port=a.port, debug=False)
 
