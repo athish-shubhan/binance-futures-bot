@@ -570,25 +570,16 @@ def index():
 
 @app.route("/api/order", methods=["POST"])
 def api_order():
-    data = request.get_json(force=True)
+    data = request.get_json(force=True, silent=True)
+    if not isinstance(data, dict):
+        return jsonify({"success": False, "error": "request body must be a JSON object"}), 400
 
-    symbol = str(data.get("symbol", "")).strip().upper()
-    side   = str(data.get("side",   "")).strip().upper()
-    otype  = str(data.get("type",   "")).strip().upper()
-    qty    = data.get("qty")
-    price  = data.get("price")
-    stop   = data.get("stop")
-
-    # ── server-side validation ────────────────────────────────────────────────
-    class _A:
-        pass
-    a = _A()
-    a.qty   = qty
-    a.type  = otype
-    a.price = price
-    a.stop  = stop
+    # ── server-side validation (the browser checks are only a convenience) ────
     try:
-        _validate.run(a)
+        symbol, side, otype, qty, price, stop = _validate.order(
+            data.get("symbol"), data.get("side"), data.get("type"),
+            data.get("qty"), data.get("price"), data.get("stop"),
+        )
     except ValueError as e:
         _log.error(f"Validation error: {e}")
         return jsonify({"success": False, "error": str(e)})

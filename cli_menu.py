@@ -46,7 +46,10 @@ def _pr(mg, st=""):
 
 def _as(pt, cs):
     if _Q:
-        return questionary.select(pt, choices=cs, style=_QS).ask()
+        ch = questionary.select(pt, choices=cs, style=_QS).ask()
+        if ch is None:  # Ctrl-C / Esc
+            sys.exit("\nAborted.")
+        return ch
     print(f"\n{pt}")
     for i, c in enumerate(cs, 1):
         print(f"  {i}. {c}")
@@ -172,16 +175,8 @@ def interactive(ak, sk, lg):
     elif ot == "STOP_MARKET":
         sp = _af("Stop trigger price  (e.g. 85000)", rq=True)
 
-    class _Ar:
-        pass
-    ar = _Ar()
-    ar.qty   = qt
-    ar.type  = ot
-    ar.price = pc
-    ar.stop  = sp
-
     try:
-        _validate.run(ar)
+        sy, sd, ot, qt, pc, sp = _validate.order(sy, sd, ot, qt, pc, sp)
     except ValueError as e:
         _pr(f"\n✗  Validation error: {e}", st="bold red")
         sys.exit(1)
