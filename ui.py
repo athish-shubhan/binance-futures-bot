@@ -615,7 +615,7 @@ def api_order():
         _log.info(f"Web UI order placed: {res}")
         return jsonify({"success": True, "result": res})
     except _req.exceptions.HTTPError as e:
-        body = getattr(e, "api_msg", None) or (e.response.json() if e.response else {})
+        body = getattr(e, "api_msg", None) or {}
         _log.error(f"API error: {body}")
         return jsonify({"success": False, "error": f"[{body.get('code')}] {body.get('msg', str(e))}"})
     except Exception as e:

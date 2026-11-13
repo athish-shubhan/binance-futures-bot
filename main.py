@@ -42,7 +42,7 @@ def main():
         log.error(f"Validation: {e}")
         sys.exit(f"\n✗  {e}\n")
     except requests.exceptions.HTTPError as e:
-        body = getattr(e, 'api_msg', None) or (e.response.json() if e.response else {})
+        body = getattr(e, "api_msg", None) or {}
         log.error(f"API error: {body}")
         sys.exit(f"\n✗  [{body.get('code')}] {body.get('msg', str(e))}\n")
     except Exception as e:

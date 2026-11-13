@@ -198,7 +198,7 @@ def interactive(ak, sk, lg):
         lg.info(f"Order placed: {rs}")
         _sr(rs)
     except requests.exceptions.HTTPError as e:
-        bd = getattr(e, "api_msg", None) or (e.response.json() if e.response else {})
+        bd = getattr(e, "api_msg", None) or {}
         lg.error(f"API error: {bd}")
         _pr(f"\n✗  [{bd.get('code')}] {bd.get('msg', str(e))}", st="bold red")
         sys.exit(1)
