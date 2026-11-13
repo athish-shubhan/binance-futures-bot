@@ -1,19 +1,23 @@
 # Binance Futures Testnet — Trading Bot
 
+![CI](https://github.com/athish-shubhan/binance-futures-bot/actions/workflows/ci.yml/badge.svg)
+
 Python CLI for placing orders on [testnet.binancefuture.com](https://testnet.binancefuture.com).
 
 ## Structure
 
 ```
 core/
-  api.py          # signed HTTP client
+  api.py          # signed HTTP client (HMAC-SHA256, timeout, plain-decimal numbers)
   trade.py        # order builder
 main.py           # argparse CLI
-validate.py       # input guards
+validate.py       # one validator shared by all three front ends
 log.py            # logging setup (writes bot.log)
 cli_menu.py       # interactive menu CLI
 ui.py             # Flask web UI
+tests/            # pytest suite; the exchange is faked, so it runs offline
 requirements.txt
+requirements-dev.txt
 ```
 
 This bot only talks to the Binance Futures **testnet** (`testnet.binancefuture.com`); it does not trade real funds.
@@ -129,12 +133,37 @@ All API requests, responses, and errors are written to `bot.log`.
 
 ---
 
+## Tests
+
+```bash
+pip install -r requirements-dev.txt
+pytest -q        # 66 tests, about a second, no network and no API keys
+ruff check .
+```
+
+The tests never contact Binance. The HTTP session is replaced by a fake that records what would have been sent, so the suite checks the exact request (URL, signature, parameters) and runs the same in CI on Python 3.10 and 3.12.
+
+---
+
+## Design notes
+
+- **One validator, three front ends.** `validate.order()` checks symbol, side, type and every number, and returns the order normalised. The argparse CLI, the menu CLI and the web UI all call it, so they cannot drift apart. The browser checks in the web UI are a convenience only; the server repeats them.
+- **Bad numbers are rejected before the request.** Empty fields, text, zero, negatives, `NaN` and infinity all raise a `ValueError` with a message for the user. Fields that do not apply to the order type are dropped, so a stray `--price` on a MARKET order is never sent.
+- **Numbers are sent in plain decimal.** Python prints `0.00001` as `1e-05`, which the exchange rejects, so the client formats floats without an exponent and signs the formatted values.
+- **Every request has a timeout** (10 s), so a stalled connection ends with an error and does not hang the CLI.
+- **The web UI rejects cross-site requests.** It has no login and holds the API keys, so any page open in the same browser could otherwise place orders by posting to `127.0.0.1`. The order endpoint accepts only JSON requests whose `Origin` and `Host` match the server, which blocks cross-site forms, cross-origin scripts and DNS rebinding.
+- **Testnet only.** The base URL is a constant pointing at the testnet, and a test fails if it changes.
+
+---
+
 ## Assumptions
 
 - Only USDT-M futures pairs (e.g. `BTCUSDT`, `ETHUSDT`).
-- Quantity precision must match the symbol's lot size — use `0.001` for BTC.
+- Quantity precision must match the symbol's lot size — use `0.001` for BTC. The bot does not look up lot sizes; the exchange rejects a wrong precision and the error is shown.
 - Supported order types are `MARKET`, `LIMIT` and `STOP_MARKET`.
 
 > **Note on STOP_MARKET:** the testnet `/fapi/v1/order` endpoint can behave differently from the live API.
 
----
+## License
+
+MIT, see [LICENSE](LICENSE).
