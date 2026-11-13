@@ -12,6 +12,7 @@ import os
 import sys
 import argparse
 import requests as _req
+from urllib.parse import urlsplit
 from flask import Flask, request, jsonify
 
 # local modules
@@ -24,6 +25,7 @@ app = Flask(__name__)
 _log = None
 _api_key = None
 _api_secret = None
+_hosts = {"127.0.0.1", "localhost"}   # Host names this UI answers to
 
 # ─────────────────────────────────────────────────────────────────────────────
 #  HTML (single-page app, all CSS + JS inline)
@@ -568,9 +570,32 @@ def index():
     return HTML
 
 
+def _trusted_request():
+    """True only for requests made by this UI's own page (or a local script).
+
+    The UI has no login and holds the API keys, so without this check any web
+    page open in the same browser could place orders by POSTing to
+    127.0.0.1. Three independent guards:
+      - JSON content type: an HTML form cannot send it, and cross-origin
+        JavaScript has to pass a CORS preflight first, which is never granted;
+      - Origin, when the browser sends one, must be this server;
+      - Host must be a name we serve, which blocks DNS rebinding.
+    """
+    if request.mimetype != "application/json":
+        return False
+    if (request.host or "").rsplit(":", 1)[0] not in _hosts:
+        return False
+    origin = request.headers.get("Origin")
+    return origin is None or urlsplit(origin).netloc == request.host
+
+
 @app.route("/api/order", methods=["POST"])
 def api_order():
-    data = request.get_json(force=True, silent=True)
+    if not _trusted_request():
+        _log.warning(f"Rejected cross-site request from Origin={request.headers.get('Origin')!r}")
+        return jsonify({"success": False, "error": "cross-site request rejected"}), 403
+
+    data = request.get_json(silent=True)
     if not isinstance(data, dict):
         return jsonify({"success": False, "error": "request body must be a JSON object"}), 400
 
@@ -624,6 +649,7 @@ def main():
     _log        = setup()
     _api_key    = a.key
     _api_secret = a.secret
+    _hosts.add(a.host)
 
     print("\n  Binance Futures Bot — Web UI")
     print(f"  Open → http://{a.host}:{a.port}\n")

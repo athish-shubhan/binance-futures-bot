@@ -58,3 +58,33 @@ def test_malformed_body_is_a_400_json_error(web, raw):
     assert r.status_code == 400
     assert r.get_json()["success"] is False
     assert placed == []
+
+
+ORDER = {"symbol": "BTCUSDT", "side": "BUY", "type": "MARKET", "qty": 1}
+
+
+def test_same_origin_browser_request_is_accepted(web):
+    c, placed = web
+    r = c.post("/api/order", json=ORDER, headers={"Origin": "http://localhost"})
+    assert r.get_json()["success"] is True and len(placed) == 1
+
+
+def test_cross_site_origin_is_rejected(web):
+    c, placed = web
+    r = c.post("/api/order", json=ORDER, headers={"Origin": "https://evil.example"})
+    assert r.status_code == 403 and placed == []
+
+
+@pytest.mark.parametrize("ctype", ["text/plain", "application/x-www-form-urlencoded", "multipart/form-data"])
+def test_form_style_posts_are_rejected(web, ctype):
+    # these are the content types a cross-site page can send without a CORS preflight
+    c, placed = web
+    r = c.post("/api/order", data='{"symbol":"BTCUSDT","side":"BUY","type":"MARKET","qty":1}', content_type=ctype)
+    assert r.status_code == 403 and placed == []
+
+
+def test_unknown_host_header_is_rejected(web):
+    # DNS rebinding: attacker's domain resolves to 127.0.0.1, so Origin matches Host
+    c, placed = web
+    r = c.post("/api/order", json=ORDER, headers={"Host": "evil.example", "Origin": "http://evil.example"})
+    assert r.status_code == 403 and placed == []
