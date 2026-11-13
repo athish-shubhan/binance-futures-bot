@@ -43,3 +43,30 @@ def test_non_json_error_body_is_kept_as_message(client):
     with pytest.raises(requests.exceptions.HTTPError) as ei:
         client.post("/fapi/v1/order", {})
     assert ei.value.api_msg == {"msg": "<html>Bad Gateway</html>"}
+
+
+def test_every_request_has_a_timeout(client):
+    client.post("/fapi/v1/order", {"symbol": "BTCUSDT"})
+    assert client.sess.calls[0][1]["timeout"] == 10
+
+
+def test_small_quantities_are_not_sent_in_scientific_notation(client):
+    client.post("/fapi/v1/order", {"quantity": 0.00001, "price": 99000.0, "stopPrice": 1e-7})
+    sent = client.sess.calls[0][1]["params"]
+    assert sent["quantity"] == "0.00001"
+    assert sent["price"] == "99000.0"
+    assert sent["stopPrice"] == "0.0000001"
+
+
+def test_signature_covers_the_formatted_values(client):
+    client.post("/fapi/v1/order", {"quantity": 0.00001})
+    sent = dict(client.sess.calls[0][1]["params"])
+    sig = sent.pop("signature")
+    assert sig == hmac.new(b"test-secret", urlencode(sent).encode(), hashlib.sha256).hexdigest()
+
+
+def test_caller_params_are_not_mutated_and_none_is_dropped(client):
+    p = {"symbol": "BTCUSDT", "price": None}
+    client.post("/fapi/v1/order", p)
+    assert p == {"symbol": "BTCUSDT", "price": None}
+    assert "price" not in client.sess.calls[0][1]["params"]
