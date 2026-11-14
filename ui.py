@@ -478,6 +478,8 @@ function validate() {
 }
 
 async function submitOrder() {
+  // Whatever result is on screen must belong to this submission, so clear the old one first.
+  document.getElementById('result-panel').classList.remove('show');
   if (!validate()) return;
 
   const btn   = document.getElementById('submit-btn');
