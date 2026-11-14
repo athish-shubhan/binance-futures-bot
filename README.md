@@ -4,6 +4,10 @@
 
 Python CLI for placing orders on [testnet.binancefuture.com](https://testnet.binancefuture.com).
 
+![Web UI demo](docs/demo.gif)
+
+*The web UI: a market buy, a limit sell, then a stop order with no stop price, which is rejected before any request is sent. Recorded from the real page by `scripts/record_demo.js`, with the exchange call replaced by a canned reply (`scripts/demo_server.py`), so no API keys were used and nothing was sent to Binance.*
+
 ## Structure
 
 ```
@@ -16,6 +20,7 @@ log.py            # logging setup (writes bot.log)
 cli_menu.py       # interactive menu CLI
 ui.py             # Flask web UI
 tests/            # pytest suite; the exchange is faked, so it runs offline
+scripts/          # demo server and recorder for the GIF above
 requirements.txt
 requirements-dev.txt
 ```
